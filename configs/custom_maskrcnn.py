@@ -152,6 +152,7 @@ total_epochs = 100  # 24
 dataset_type = 'CocoDataset'
 # dataset_type = 'StonesDataset'
 data_root = '/home/euloo/Documents/datasets/stones_detection/'
+data_root_additional = '/home/euloo/Documents/datasets/asbestos/tr_stones/'  # конвейерная лента
 
 # img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 img_norm_cfg = dict(mean=[123], std=[58], to_rgb=False)
@@ -167,26 +168,25 @@ train_pipeline = [
 ]
 test_pipeline = [
     dict(type='LoadImageFromFile', color_type='grayscale', to_float32=True),
-    dict(
-        type='MultiScaleFlipAug',
-        img_scale=(1333, 800),
-        flip=False,
-        transforms=[
-            dict(type='Resize', keep_ratio=True),
-            dict(type='RandomFlip'),
-            dict(type='Normalize', **img_norm_cfg),
-            dict(type='Pad', size_divisor=32),
-            dict(type='ImageToTensor', keys=['img']),
-            dict(type='Collect', keys=['img']),
-        ])
+    dict(type='MultiScaleFlipAug',
+         img_scale=(1333, 800),
+         flip=False,
+         transforms=[
+             dict(type='Resize', keep_ratio=True),
+             dict(type='RandomFlip'),
+             dict(type='Normalize', **img_norm_cfg),
+             dict(type='Pad', size_divisor=32),
+             dict(type='ImageToTensor', keys=['img']),
+             dict(type='Collect', keys=['img']),
+         ])
 ]
 dataset_A = dict(
     type='RepeatDataset',
     times=1,
     dataset=dict(
         type=dataset_type,
-        ann_file='/home/euloo/Documents/datasets/asbestos/tr_stones/asbest_stones_transporter.json',
-        img_prefix='/home/euloo/Documents/datasets/asbestos/tr_stones/',
+        aann_file=data_root_additional + 'asbest_stones_transporter.json',
+        img_prefix=data_root_additional,
         pipeline=train_pipeline,
         classes=classes))
 dataset_B_C = dict(
@@ -203,7 +203,12 @@ data = dict(
     workers_per_gpu=2,
     train=[dataset_A, dataset_B_C],
     val=[dataset_A, dataset_B_C],
-    test=[dataset_A, dataset_B_C],)
+    test=dict(
+        type=dataset_type,
+        ann_file=[data_root + 'annotations/detection.json', data_root + 'annotations/detection2.json'],
+        img_prefix=data_root + 'images/',
+        pipeline=test_pipeline,
+        classes=classes))
 evaluation = dict(metric=['bbox', 'segm'])
 
 # '../_base_/default_runtime.py'
